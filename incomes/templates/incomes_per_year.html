@@ -1,0 +1,49 @@
+{% load custom_filters %}
+{% load humanize %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2
+        }
+
+        th {
+            background-color: #04AA6D;
+            color: white;
+        }
+    </style>
+    <title>Incomes per Year</title>
+</head>
+<body>
+    <h1>Incomes per Year</h1>
+    <table>
+        <tr>
+            <th>Year</th>
+            {% for category in categories %}
+                <th>{{ category.name }}</th>
+            {% endfor %}
+        </tr>
+        {% for year, category_data in incomes.items %}
+            <tr>
+                <td>{{ year }}</td>
+                {% for category in categories %}
+                    <td>{{ category_data|get_item:category.name|default:0|intcomma }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

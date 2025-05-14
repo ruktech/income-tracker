@@ -1,0 +1,67 @@
+import logging
+import json
+from datetime import timedelta
+
+from django.conf import settings
+from django.utils import timezone
+from django.utils.timezone import now
+from django.db.models import Prefetch
+from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
+
+from .models import Income, UserProfile
+
+logger = logging.getLogger(__name__)
+
+
+def build_template_variables(income):
+    """Prepare variables for WhatsApp content template."""
+    return json.dumps({
+        "1": income.user.first_name or income.user.username,
+        "2": f"{income.amount:.2f}",
+        "3": income.category.name if income.category else "General",
+        "4": income.description or "No description"
+    })
+
+
+def get_tomorrows_incomes():
+    """Return incomes with a reminder due tomorrow."""
+    tomorrow = timezone.localdate() + timedelta(days=1)
+    return (
+        Income.objects
+        .select_related("user", "category")
+        .filter(expiration_date__gte=now().date())
+        .prefetch_related(
+            Prefetch("user__userprofile", queryset=UserProfile.objects.only("twilio_to_whatsapp_number"))
+        ),
+        tomorrow
+    )
+
+
+def send_whatsapp_reminder():
+    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+    incomes, tomorrow = get_tomorrows_incomes()
+
+    for income in incomes:
+        if tomorrow not in income.upcoming_occurrences(tomorrow):
+            continue
+
+        try:
+            user_profile = income.user.userprofile
+        except UserProfile.DoesNotExist:
+            logger.warning(f"UserProfile missing for user {income.user.id}")
+            continue
+
+        to_number = f"whatsapp:{user_profile.twilio_to_whatsapp_number}"
+        template_vars = build_template_variables(income)
+
+        try:
+            message = client.messages.create(
+                from_=settings.TWILIO_FROM_WHATSAPP_NUMBER,
+                to=to_number,
+                content_sid=settings.TWILIO_WHATSAPP_TEMPLATE_SID,
+                content_variables=template_vars
+            )
+            logger.info(f"✅ Reminder sent | Income #{income.id} → {to_number}")
+        except TwilioRestException as e:
+            logger.error(f"❌ Twilio failed | Income #{income.id} | {e.code}: {e.msg}")
