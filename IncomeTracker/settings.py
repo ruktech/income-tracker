@@ -155,7 +155,45 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # -------------------------------------------------------------------
-# CUSTOM USER MODEL
+# PRODUCTION SETTINGS (APPLIED ONLY WHEN DEBUG IS FALSE)
 # -------------------------------------------------------------------
-# Uncomment this if you plan to use a custom user model
-# AUTH_USER_MODEL = 'accounts.CustomUser'
+if not DEBUG:
+    # Security settings
+    #SECURE_SSL_REDIRECT = True  # Redirect all HTTP traffic to HTTPS
+    SESSION_COOKIE_SECURE = True  # Use secure cookies for sessions
+    CSRF_COOKIE_SECURE = True  # Use secure cookies for CSRF
+    #SECURE_HSTS_SECONDS = 31536000  # Enforce HTTPS for 1 year
+    #SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Apply HSTS to all subdomains
+    #SECURE_HSTS_PRELOAD = True  # Preload HSTS
+    SECURE_BROWSER_XSS_FILTER = True  # Enable XSS filter in browsers
+    SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME type sniffing
+
+    # Allowed hosts for production
+    ALLOWED_HOSTS = env.get('ALLOWED_HOSTS', '').split(',')
+    if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
+        raise ValueError("ALLOWED_HOSTS must be set in production!")
+
+    # Static and media files
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
+    # Logging for production
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'handlers': {
+            'file': {
+                'level': 'ERROR',
+                'class': 'logging.FileHandler',
+                'filename': BASE_DIR / 'logs/error.log',
+            },
+        },
+        'loggers': {
+            'django': {
+                'handlers': ['file'],
+                'level': 'ERROR',
+                'propagate': True,
+            },
+        },
+    }
+
+    # Other production-specific settings can go here
