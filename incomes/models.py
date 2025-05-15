@@ -5,26 +5,70 @@ from django.utils.translation import gettext_lazy as _
 from typing import Optional, List
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from django.db.models.signals import pre_delete
+from django.utils.html import escape
+from django.dispatch import receiver
+from django.db.models import QuerySet
+from cryptography.fernet import Fernet
+from django.conf import settings
+import base64
+import hashlib
+from decimal import Decimal
 
+class EncryptedModel(models.Model):
+    """
+    Base model that provides encryption utilities for other models.
+    """
+    class Meta:
+        abstract = True  # This ensures the model is not created in the database
+
+    def _get_encryption_key(self):
+        """
+        Generate a 32-byte URL-safe encryption key derived from the SECRET_KEY.
+        """
+        secret_key = settings.SECRET_KEY.encode()  # Convert to bytes
+        hashed_key = hashlib.sha256(secret_key).digest()  # Hash the key
+        return base64.urlsafe_b64encode(hashed_key[:32])  # Ensure 32 bytes
+
+class IncomeQuerySet(QuerySet):
+    def for_user(self, user):
+        return self.filter(user=user)
+        
 def default_expiration_date():
     """Returns a date 3 years from today."""
     return date.today() + timedelta(days=3 * 365)
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+class UserProfile(EncryptedModel):
+    user = models.OneToOneField(User, on_delete=models.PROTECT)
     twilio_to_whatsapp_number = models.CharField(
         max_length=20,
         help_text=_("The WhatsApp number to send reminders to for this user.")
     )
 
+    def save(self, *args, **kwargs):
+        # Encrypt the WhatsApp number
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        self.twilio_to_whatsapp_number = cipher_suite.encrypt(
+            self.twilio_to_whatsapp_number.encode()
+        ).decode()
+
+        super().save(*args, **kwargs)
+
+    def get_decrypted_whatsapp_number(self):
+        # Decrypt the WhatsApp number
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        return cipher_suite.decrypt(self.twilio_to_whatsapp_number.encode()).decode()
+
     def __str__(self):
         return f"{self.user.username}'s Profile"
     
-class Category(models.Model):
-    name = models.CharField(max_length=255)
+class Category(EncryptedModel):
+    _name_encrypted = models.CharField(max_length=255, db_column='name')
     user = models.ForeignKey(
         get_user_model(),
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         null=False,
         blank=False,
         help_text=_("The user who owns this category.")
@@ -33,14 +77,32 @@ class Category(models.Model):
     class Meta:
         verbose_name = _("Category")
         verbose_name_plural = _("Categories")
-        ordering = ["name"]
-        unique_together = ("user", "name")  # Enforce uniqueness of name per user
+        ordering = ["_name_encrypted"]
+        unique_together = ("user", "_name_encrypted")  # Enforce uniqueness of name per user
 
-    def __str__(self) -> str:
+    @property
+    def name(self):
+        if not self._name_encrypted:
+            return None
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        return cipher_suite.decrypt(self._name_encrypted.encode()).decode()
+
+    @name.setter
+    def name(self, value):
+        if not value or not value.isalnum():
+            raise ValueError(_("Category name must be alphanumeric and not empty."))
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        self._name_encrypted = cipher_suite.encrypt(value.encode()).decode()
+
+    def clean(self):
+        super().clean()
+
+    def __str__(self):
         return self.name
 
-
-class Income(models.Model):
+class Income(EncryptedModel):
     class RecurringChoices(models.TextChoices):
         NO = "NO", _("No Recurrence")
         MONTHLY = "MO", _("Monthly")
@@ -57,10 +119,12 @@ class Income(models.Model):
             }
             return intervals.get(value)
 
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    _amount_encrypted = models.CharField(max_length=255, db_column='amount')
+    _description_encrypted = models.TextField(blank=False, null=False,  default="", db_column='description')
+    # amount = models.CharField(max_length=255)
     date = models.DateField()
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
-    description = models.TextField(blank=True, null=True)
+    # description = models.TextField(blank=True, null=True)
     recurring = models.CharField(
         max_length=2,
         choices=RecurringChoices.choices,
@@ -68,7 +132,7 @@ class Income(models.Model):
     )
     user = models.ForeignKey(
         get_user_model(),
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         null=False,
         blank=False
     )
@@ -79,16 +143,40 @@ class Income(models.Model):
         help_text=_("The date after which this income is considered expired.")
     )
 
+    @property
+    def amount(self):
+        if not self._amount_encrypted:
+            return None
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        return float(cipher_suite.decrypt(self._amount_encrypted.encode()).decode())
+
+    @amount.setter
+    def amount(self, value):
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        self._amount_encrypted = cipher_suite.encrypt(str(value).encode()).decode()
+
+    @property
+    def description(self):
+        if not self._description_encrypted:
+            return None
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        return cipher_suite.decrypt(self._description_encrypted.encode()).decode()
+
+    @description.setter
+    def description(self, value):
+        if not value:
+            raise ValueError("Description is required.")
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        self._description_encrypted = cipher_suite.encrypt(value.encode()).decode()
+
     class Meta:
         verbose_name = _("Income")
         verbose_name_plural = _("Incomes")
         ordering = ["-date"]
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(amount__gte=0),
-                name="amount_positive",
-            )
-        ]
 
 
     def get_next_occurrence(self, current_date: Optional[date] = None) -> Optional[date]:
@@ -124,9 +212,47 @@ class Income(models.Model):
 
         return occurrences
 
-    def clean(self):
-        """
-        Validate the model's data.
-        """
-        if self.amount < 0:
-            raise ValueError(_("Amount must be non-negative."))
+    # def clean(self):
+    #     """
+    #     Validate the model's data.
+    #     """
+    #     super().clean()
+    #     if self.amount and float(self.get_decrypted_amount()) < 0:
+    #         raise ValueError(_("Amount must be non-negative."))
+    #     if self.description and len(self.description) > 20:
+    #         raise ValueError(_("Description must not exceed 20 characters."))
+        
+    # def save(self, *args, **kwargs):
+    #     if self.description:
+    #         self.description = escape(self.description)  # Sanitize HTML input
+
+    #     # Encrypt sensitive fields
+    #     encryption_key = self._get_encryption_key()
+    #     cipher_suite = Fernet(encryption_key)
+
+    #     # Encrypt amount and description
+    #     self.amount = cipher_suite.encrypt(str(self.amount).encode()).decode()
+    #     if self.description:
+    #         self.description = cipher_suite.encrypt(self.description.encode()).decode()
+    #     super().save(*args, **kwargs)
+
+    def get_decrypted_amount(self):
+        # Decrypt the amount
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        return float(cipher_suite.decrypt(self.amount.encode()).decode())
+
+    def get_decrypted_description(self):
+        # Decrypt the description
+        if not self.description:
+            return None
+        encryption_key = self._get_encryption_key()
+        cipher_suite = Fernet(encryption_key)
+        return cipher_suite.decrypt(self.description.encode()).decode()
+    
+    objects = IncomeQuerySet.as_manager()
+
+receiver(pre_delete, sender=Income)
+def prevent_unauthorized_deletion(sender, instance, **kwargs):
+    if not instance.user.has_perm("delete_income"):
+        raise ValueError(_("You do not have permission to delete this income."))
