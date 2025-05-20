@@ -226,16 +226,6 @@ class Income(EncryptedModel):
     #     if self.description:
     #         self.description = escape(self.description)  # Sanitize HTML input
 
-    #     # Encrypt sensitive fields
-    #     encryption_key = self._get_encryption_key()
-    #     cipher_suite = Fernet(encryption_key)
-
-    #     # Encrypt amount and description
-    #     self.amount = cipher_suite.encrypt(str(self.amount).encode()).decode()
-    #     if self.description:
-    #         self.description = cipher_suite.encrypt(self.description.encode()).decode()
-    #     super().save(*args, **kwargs)
-
     def get_decrypted_amount(self):
         # Decrypt the amount
         encryption_key = self._get_encryption_key()
