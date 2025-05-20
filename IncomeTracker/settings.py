@@ -141,7 +141,7 @@ USE_TZ = True
 # STATIC AND MEDIA FILES
 # -------------------------------------------------------------------
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 
 # Media files (e.g., user uploads)
@@ -159,14 +159,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # -------------------------------------------------------------------
 if not DEBUG:
     # Security settings
-    #SECURE_SSL_REDIRECT = True  # Redirect all HTTP traffic to HTTPS
+    SECURE_SSL_REDIRECT = True  # Redirect all HTTP traffic to HTTPS
     SESSION_COOKIE_SECURE = True  # Use secure cookies for sessions
     CSRF_COOKIE_SECURE = True  # Use secure cookies for CSRF
-    #SECURE_HSTS_SECONDS = 31536000  # Enforce HTTPS for 1 year
-    #SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Apply HSTS to all subdomains
-    #SECURE_HSTS_PRELOAD = True  # Preload HSTS
+    SECURE_HSTS_SECONDS = 31536000  # Enforce HTTPS for 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Apply HSTS to all subdomains
+    SECURE_HSTS_PRELOAD = True  # Preload HSTS
     SECURE_BROWSER_XSS_FILTER = True  # Enable XSS filter in browsers
     SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME type sniffing
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
     # Allowed hosts for production
     ALLOWED_HOSTS = env.get('ALLOWED_HOSTS', '').split(',')
