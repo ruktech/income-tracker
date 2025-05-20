@@ -225,20 +225,6 @@ class Income(EncryptedModel):
     # def save(self, *args, **kwargs):
     #     if self.description:
     #         self.description = escape(self.description)  # Sanitize HTML input
-
-    def get_decrypted_amount(self):
-        # Decrypt the amount
-        encryption_key = self._get_encryption_key()
-        cipher_suite = Fernet(encryption_key)
-        return float(cipher_suite.decrypt(self.amount.encode()).decode())
-
-    def get_decrypted_description(self):
-        # Decrypt the description
-        if not self.description:
-            return None
-        encryption_key = self._get_encryption_key()
-        cipher_suite = Fernet(encryption_key)
-        return cipher_suite.decrypt(self.description.encode()).decode()
     
     objects = IncomeQuerySet.as_manager()
 
