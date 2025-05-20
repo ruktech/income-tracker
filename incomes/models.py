@@ -169,6 +169,7 @@ class Income(EncryptedModel):
     def description(self, value):
         if not value:
             raise ValueError("Description is required.")
+        value = escape(value)  # Sanitize HTML input
         encryption_key = self._get_encryption_key()
         cipher_suite = Fernet(encryption_key)
         self._description_encrypted = cipher_suite.encrypt(value.encode()).decode()
@@ -212,19 +213,12 @@ class Income(EncryptedModel):
 
         return occurrences
 
-    # def clean(self):
-    #     """
-    #     Validate the model's data.
-    #     """
-    #     super().clean()
-    #     if self.amount and float(self.get_decrypted_amount()) < 0:
-    #         raise ValueError(_("Amount must be non-negative."))
-    #     if self.description and len(self.description) > 20:
-    #         raise ValueError(_("Description must not exceed 20 characters."))
-        
-    # def save(self, *args, **kwargs):
-    #     if self.description:
-    #         self.description = escape(self.description)  # Sanitize HTML input
+    def clean(self):
+        super().clean()
+        if self.amount is not None and self.amount < 0:
+            raise ValueError(_("Amount must be non-negative."))
+        if self.description and len(self.description) > 20:
+            raise ValueError(_("Description must not exceed 20 characters."))
     
     objects = IncomeQuerySet.as_manager()
 
