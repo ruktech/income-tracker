@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import timedelta, date
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from typing import Optional, List
 from django.contrib.auth import get_user_model
@@ -14,6 +15,82 @@ from django.conf import settings
 import base64
 import hashlib
 from decimal import Decimal
+
+#region Soft and Hard Delete Implementation
+
+class SoftDeleteQuerySet(models.QuerySet):
+    def delete(self):
+        return super().update(is_deleted=True, deleted_at=timezone.now())
+
+    def hard_delete(self):
+        return super().delete()
+
+    def alive(self):
+        return self.filter(is_deleted=False)
+
+    def dead(self):
+        return self.filter(is_deleted=True)
+
+class SoftDeleteManager(models.Manager):
+    def get_queryset(self):
+        return self.all_with_deleted().alive()
+        # return SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=False)
+
+    def all_with_deleted(self):
+        return SoftDeleteQuerySet(self.model, using=self._db)
+
+    def only_deleted(self):
+        return self.all_with_deleted().dead()
+
+
+class SoftDeleteModel(models.Model):
+    is_deleted = models.BooleanField(default=False, db_index=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    objects = SoftDeleteManager()
+    all_objects = SoftDeleteManager()  # For accessing all records, including deleted
+
+    class Meta:
+        abstract = True
+
+    def delete(self, using=None, keep_parents=False):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+
+    def hard_delete(self, using=None, keep_parents=False):
+        super().delete(using=using, keep_parents=keep_parents)
+
+    def restore(self):
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+
+    
+        """Usage example:
+
+            ->Soft delete
+            income.delete()
+
+            ->Restore
+            income.restore()
+
+            ->Hard delete (permanent)
+            income.hard_delete()
+
+            ->Query only non-deleted
+            Income.objects.all()
+
+            ->Query all (including deleted)
+            Income.all_objects.all_with_deleted()
+
+            ->Query only deleted
+            Income.all_objects.only_deleted()
+
+        """
+
+#endregion
+
 
 class EncryptedModel(models.Model):
     """
@@ -64,7 +141,7 @@ class UserProfile(EncryptedModel):
     def __str__(self):
         return f"{self.user.username}'s Profile"
     
-class Category(EncryptedModel):
+class Category(SoftDeleteModel, EncryptedModel):
     _name_encrypted = models.CharField(max_length=255, db_column='name')
     user = models.ForeignKey(
         get_user_model(),
@@ -102,7 +179,7 @@ class Category(EncryptedModel):
     def __str__(self):
         return self.name
 
-class Income(EncryptedModel):
+class Income(SoftDeleteModel, EncryptedModel):
     class RecurringChoices(models.TextChoices):
         NO = "NO", _("No Recurrence")
         MONTHLY = "MO", _("Monthly")
@@ -220,7 +297,7 @@ class Income(EncryptedModel):
         if self.description and len(self.description) > 20:
             raise ValueError(_("Description must not exceed 20 characters."))
     
-    objects = IncomeQuerySet.as_manager()
+    #objects = IncomeQuerySet.as_manager()
 
 receiver(pre_delete, sender=Income)
 def prevent_unauthorized_deletion(sender, instance, **kwargs):
