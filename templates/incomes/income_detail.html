@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Income Detail</h2>
+<p>Amount: {{ object.amount }}</p>
+<p>Category: {{ object.category }}</p>
+<p>Date: {{ object.date }}</p>
+<p>Description: {{ object.description }}</p>
+<p>Recurring: {{ object.get_recurring_display }}</p>
+<a href="{% url 'income-update' object.pk %}">Edit</a> |
+<a href="{% url 'income-delete' object.pk %}">Delete</a> |
+<a href="{% url 'income-list' %}">Back to list</a>
+{% endblock %}

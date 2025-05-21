@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Income Tracker{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-css-reset/dist/reset.min.css">
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; background: #f9f9f9; }
+      main { max-width: 600px; margin: auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
+      h2 { margin-top: 0; }
+      a { color: #0077cc; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      form { margin-bottom: 1rem; }
+      button { background: #0077cc; color: #fff; border: none; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; }
+      button:hover { background: #005fa3; }
+    </style>
+</head>
+<body>
+<main>
+  {% if messages %}
+    <ul>
+      {% for message in messages %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Your Incomes</h2>
+<ul>
+  {% for income in incomes %}
+    <li>
+      <a href="{% url 'income-detail' income.pk %}">
+        {{ income.amount }} - {{ income.category }} - {{ income.date }}
+      </a>
+    </li>
+  {% empty %}
+    <li>No incomes found.</li>
+  {% endfor %}
+</ul>
+<a href="{% url 'income-create' %}">Add Income</a>
+{% endblock %}

@@ -15,6 +15,21 @@ import base64
 import hashlib
 from django.core.exceptions import PermissionDenied
 
+class OwnerProtectedDeleteMixin:
+    """
+    A reusable mixin that enforces delete permissions and ownership.
+    Use in models with a `user` FK and custom delete/hard_delete logic.
+    """
+
+    def _check_permission_and_ownership(self, acting_user, perm: str):
+        if acting_user is None:
+            raise PermissionDenied("Authenticated user is required for deletion.")
+        if not acting_user.has_perm(perm):
+            raise PermissionDenied(f"You do not have permission: {perm}")
+        if self.user != acting_user:
+            raise PermissionDenied("You cannot delete an object you don’t own.")
+        
+
 #region Soft and Hard Delete Implementation
 
 class SoftDeleteQuerySet(models.QuerySet):
@@ -42,7 +57,7 @@ class SoftDeleteManager(models.Manager):
         return self.all_with_deleted().dead()
 
 
-class SoftDeleteModel(models.Model):
+class SoftDeleteModel(OwnerProtectedDeleteMixin, models.Model):
     is_deleted = models.BooleanField(default=False, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
@@ -52,14 +67,24 @@ class SoftDeleteModel(models.Model):
     class Meta:
         abstract = True
 
-    def delete(self, using=None, keep_parents=False):
-        if not self.user.has_perm("incomes.delete_income"):
-            raise PermissionDenied("You do not have permission to delete this income.")
+    def delete(self, using=None, keep_parents=False, acting_user=None):
+        if acting_user is None:
+            raise PermissionDenied("User authentication required.")
+        if not acting_user.has_perm("incomes.delete_income"):
+            raise PermissionDenied("You do not have delete permission.")
+        if self.user != acting_user:
+            raise PermissionDenied("You cannot delete income you don’t own.")
         self.is_deleted = True
         self.deleted_at = timezone.now()
         self.save(update_fields=['is_deleted', 'deleted_at'])
 
-    def hard_delete(self, using=None, keep_parents=False):
+    def hard_delete(self, using=None, keep_parents=False, acting_user=None):
+        if acting_user is None:
+            raise PermissionDenied("User authentication required.")
+        if not acting_user.has_perm("incomes.delete_income"):
+            raise PermissionDenied("You do not have delete permission.")
+        if self.user != acting_user:
+            raise PermissionDenied("You cannot delete income you don’t own.")
         super().delete(using=using, keep_parents=keep_parents)
 
     def restore(self):

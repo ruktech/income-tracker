@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Welcome to Income Tracker</h2>
+{% if user.is_authenticated %}
+  <div style="display: flex; flex-direction: column; gap: 1em; max-width: 300px;">
+    <a href="{% url 'income-list' %}"><button>My Incomes</button></a>
+    <a href="{% url 'category-list' %}"><button>My Categories</button></a>
+    <a href="{% url 'userprofile-detail' %}"><button>My Profile</button></a>
+    <a href="{% url 'logout' %}"><button>Logout</button></a>
+  </div>
+{% else %}
+  <div style="display: flex; flex-direction: column; gap: 1em; max-width: 300px;">
+    <a href="{% url 'login' %}"><button>Login</button></a>
+    <a href="{% url 'signup' %}"><button>Sign Up</button></a>
+  </div>
+{% endif %}
+{% endblock %}

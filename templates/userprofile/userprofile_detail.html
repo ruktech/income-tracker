@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>User Profile</h2>
+<p>WhatsApp Number: {{ object.get_decrypted_whatsapp_number }}</p>
+<a href="{% url 'userprofile-update' %}">Edit</a>
+{% endblock %}
