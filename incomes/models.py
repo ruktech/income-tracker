@@ -107,9 +107,9 @@ class EncryptedModel(models.Model):
         hashed_key = hashlib.sha256(secret_key).digest()  # Hash the key
         return base64.urlsafe_b64encode(hashed_key[:32])  # Ensure 32 bytes
 
-class IncomeQuerySet(QuerySet):
-    def for_user(self, user):
-        return self.filter(user=user)
+# class IncomeQuerySet(QuerySet):
+#     def for_user(self, user):
+#         return self.filter(user=user)
         
 def default_expiration_date():
     """Returns a date 3 years from today."""
