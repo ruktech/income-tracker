@@ -25,7 +25,7 @@ def build_template_variables(income):
 
 
 def get_tomorrows_incomes():
-    """Return incomes with a reminder due tomorrow."""
+    """Return active non expired incomes with a reminder due tomorrow."""
     tomorrow = timezone.localdate() + timedelta(days=1)
     return (
         Income.objects

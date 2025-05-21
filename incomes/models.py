@@ -9,12 +9,11 @@ from django.contrib.auth.models import User
 from django.db.models.signals import pre_delete
 from django.utils.html import escape
 from django.dispatch import receiver
-from django.db.models import QuerySet
 from cryptography.fernet import Fernet
 from django.conf import settings
 import base64
 import hashlib
-from decimal import Decimal
+from django.core.exceptions import PermissionDenied
 
 #region Soft and Hard Delete Implementation
 
@@ -54,6 +53,8 @@ class SoftDeleteModel(models.Model):
         abstract = True
 
     def delete(self, using=None, keep_parents=False):
+        if not self.user.has_perm("incomes.delete_income"):
+            raise PermissionDenied("You do not have permission to delete this income.")
         self.is_deleted = True
         self.deleted_at = timezone.now()
         self.save(update_fields=['is_deleted', 'deleted_at'])
@@ -91,7 +92,6 @@ class SoftDeleteModel(models.Model):
 
 #endregion
 
-
 class EncryptedModel(models.Model):
     """
     Base model that provides encryption utilities for other models.
@@ -106,10 +106,6 @@ class EncryptedModel(models.Model):
         secret_key = settings.SECRET_KEY.encode()  # Convert to bytes
         hashed_key = hashlib.sha256(secret_key).digest()  # Hash the key
         return base64.urlsafe_b64encode(hashed_key[:32])  # Ensure 32 bytes
-
-# class IncomeQuerySet(QuerySet):
-#     def for_user(self, user):
-#         return self.filter(user=user)
         
 def default_expiration_date():
     """Returns a date 3 years from today."""
@@ -175,6 +171,15 @@ class Category(SoftDeleteModel, EncryptedModel):
 
     def clean(self):
         super().clean()
+        # Enforce uniqueness of name per user (case-insensitive)
+        if self.name:
+            qs = Category.all_objects.filter(user=self.user)
+            # Exclude self when updating
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            for cat in qs:
+                if cat.name and cat.name.lower() == self.name.lower():
+                    raise ValueError(_("Category name must be unique per user."))
 
     def __str__(self):
         return self.name
@@ -298,8 +303,3 @@ class Income(SoftDeleteModel, EncryptedModel):
             raise ValueError(_("Description must not exceed 20 characters."))
     
     #objects = IncomeQuerySet.as_manager()
-
-receiver(pre_delete, sender=Income)
-def prevent_unauthorized_deletion(sender, instance, **kwargs):
-    if not instance.user.has_perm("delete_income"):
-        raise ValueError(_("You do not have permission to delete this income."))
