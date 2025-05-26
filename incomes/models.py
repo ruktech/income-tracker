@@ -14,6 +14,7 @@ from django.conf import settings
 import base64
 import hashlib
 from django.core.exceptions import PermissionDenied
+from dateutil.relativedelta import relativedelta
 
 class OwnerProtectedDeleteMixin:
     """
@@ -217,12 +218,12 @@ class Income(SoftDeleteModel, EncryptedModel):
         SEMI_ANNUALLY = "SO", _("Semi-annually")
 
         @classmethod
-        def get_interval(cls, value: str) -> Optional[timedelta]:
+        def get_interval(cls, value: str) -> Optional[relativedelta]:
             """Return the interval for the recurrence type."""
             intervals = {
-                cls.MONTHLY: timedelta(days=30),
-                cls.QUARTERLY: timedelta(days=90),
-                cls.SEMI_ANNUALLY: timedelta(days=180),
+                cls.MONTHLY: relativedelta(months=1),
+                cls.QUARTERLY: relativedelta(months=3),
+                cls.SEMI_ANNUALLY: relativedelta(months=6),
             }
             return intervals.get(value)
 

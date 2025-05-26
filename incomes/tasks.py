@@ -43,7 +43,11 @@ def send_whatsapp_reminder():
     incomes, tomorrow = get_tomorrows_incomes()
 
     for income in incomes:
-        if tomorrow not in income.upcoming_occurrences(tomorrow):
+        occurrences = income.upcoming_occurrences(end_date=tomorrow + timedelta(days=1))
+        #print(f"Income #{income.id} occurrences: {occurrences}")
+
+        if tomorrow not in occurrences:
+            #print(f"⏭️ Skipping income #{income.id} - not scheduled for {tomorrow}")
             continue
 
         try:
