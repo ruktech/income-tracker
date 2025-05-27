@@ -16,6 +16,7 @@ import hashlib
 from django.core.exceptions import PermissionDenied
 from dateutil.relativedelta import relativedelta
 from django.core.exceptions import ValidationError
+import re
 
 class OwnerProtectedDeleteMixin:
     """
@@ -190,7 +191,7 @@ class Category(SoftDeleteModel, EncryptedModel):
 
     @name.setter
     def name(self, value):
-        if not value or not value.isalnum():
+        if not value or not re.match(r'^[\w\s]+$', value):
             raise ValueError(_("Category name must be alphanumeric and not empty."))
         encryption_key = self._get_encryption_key()
         cipher_suite = Fernet(encryption_key)
