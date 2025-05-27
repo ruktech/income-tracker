@@ -218,6 +218,7 @@ class Income(SoftDeleteModel, EncryptedModel):
         MONTHLY = "MO", _("Monthly")
         QUARTERLY = "QO", _("Quarterly")
         SEMI_ANNUALLY = "SO", _("Semi-annually")
+        ANNUALLY = "YO", _("Annually")
 
         @classmethod
         def get_interval(cls, value: str) -> Optional[relativedelta]:
@@ -226,6 +227,7 @@ class Income(SoftDeleteModel, EncryptedModel):
                 cls.MONTHLY: relativedelta(months=1),
                 cls.QUARTERLY: relativedelta(months=3),
                 cls.SEMI_ANNUALLY: relativedelta(months=6),
+                cls.ANNUALLY: relativedelta(years=1),
             }
             return intervals.get(value)
 
