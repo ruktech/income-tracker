@@ -15,6 +15,7 @@ import base64
 import hashlib
 from django.core.exceptions import PermissionDenied
 from dateutil.relativedelta import relativedelta
+from django.core.exceptions import ValidationError
 
 class OwnerProtectedDeleteMixin:
     """
@@ -326,6 +327,6 @@ class Income(SoftDeleteModel, EncryptedModel):
         if self.amount is not None and self.amount < 0:
             raise ValueError(_("Amount must be non-negative."))
         if self.description and len(self.description) > 20:
-            raise ValueError(_("Description must not exceed 20 characters."))
+            raise ValidationError(_("Description must not exceed 20 characters."))
     
     #objects = IncomeQuerySet.as_manager()
