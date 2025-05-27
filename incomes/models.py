@@ -326,7 +326,7 @@ class Income(SoftDeleteModel, EncryptedModel):
         super().clean()
         if self.amount is not None and self.amount < 0:
             raise ValueError(_("Amount must be non-negative."))
-        if self.description and len(self.description) > 20:
-            raise ValidationError(_("Description must not exceed 20 characters."))
+        if self.description and len(self.description) > 150:
+            raise ValidationError(_("Description must not exceed 150 characters."))
     
     #objects = IncomeQuerySet.as_manager()
