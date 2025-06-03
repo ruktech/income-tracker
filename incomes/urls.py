@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import ReportView
 
 urlpatterns = [
     # Income URLs
@@ -30,4 +31,6 @@ urlpatterns = [
     path('reset/<uidb64>/<token>/', views.CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', views.CustomPasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
+    # Report URL
+    path('reports/', ReportView.as_view(), name='income-report'),
 ]

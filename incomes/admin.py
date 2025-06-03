@@ -9,7 +9,7 @@ restore_incomes.short_description = "Restore selected incomes"
 
 class IncomeAdmin(admin.ModelAdmin):
     form = IncomeForm
-    list_display = ('amount', 'date', 'category', 'description', 'recurring', 'user', 'is_deleted')
+    list_display = ('amount', 'currency', 'date', 'category', 'description', 'recurring', 'user', 'is_deleted')
     list_filter = ('category', 'recurring', 'user', 'is_deleted')
     actions = [restore_incomes]
 

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Income Reports</h2>
+<form method="get" class="form-inline mb-3">
+  <label for="year">Year:</label>
+  <select name="year" id="year" class="form-control mx-2">
+    {% for y in years %}
+      <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+  <label for="category">Category:</label>
+  <select name="category" id="category" class="form-control mx-2">
+    <option value="">All</option>
+    {% for cat in categories %}
+      <option value="{{ cat.id }}" {% if cat.id == selected_category %}selected{% endif %}>{{ cat.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+<div class="row">
+  <div class="col-md-4">
+    <h4>Accrued Incomes ({{ accrued_incomes.count }})</h4>
+    <p><strong>Total:</strong> {{ accrued_total }}</p>
+    <ul>
+      {% for income in accrued_incomes %}
+        <li>{{ income.date }} - {{ income.amount }} - {{ income.category.name }}</li>
+      {% empty %}
+        <li>No accrued incomes.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="col-md-4">
+    <h4>Upcoming Incomes ({{ upcoming_incomes.count }})</h4>
+    <p><strong>Total:</strong> {{ upcoming_total }}</p>
+    <ul>
+      {% for income in upcoming_incomes %}
+        <li>{{ income.date }} - {{ income.amount }} - {{ income.category.name }}</li>
+      {% empty %}
+        <li>No upcoming incomes.</li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div class="col-md-4">
+    <h4>All Incomes ({{ all_incomes.count }})</h4>
+    <p><strong>Total:</strong> {{ all_total }}</p>
+    <ul>
+      {% for income in all_incomes %}
+        <li>{{ income.date }} - {{ income.amount }} - {{ income.category.name }}</li>
+      {% empty %}
+        <li>No incomes.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

@@ -1,9 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from django.utils import timezone
 from datetime import date, timedelta
-from .models import Income, Category, UserProfile
-from django.db.models.signals import pre_delete
+from .models import Income, Category
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 
@@ -168,3 +166,52 @@ class IncomeModelTest(TestCase):
 
         with self.assertRaises(PermissionDenied):
             income.delete()
+
+    def test_report_view_filters_and_soft_deleted(self):
+        """Test report view logic for accrued, upcoming, all, category filter, and soft-deleted inclusion for previous years."""
+        from django.urls import reverse
+        from django.test import Client
+        client = Client()
+        client.login(username="user1", password="pass")
+        # Create incomes for current and previous year
+        today = date.today()
+        prev_year = today.year - 1
+        income1 = Income.objects.create(
+            user=self.user1,
+            category=self.category1,
+            date=today.replace(year=prev_year),
+            recurring=Income.RecurringChoices.NO,
+            amount=100,
+            description="PrevYearAccrued"
+        )
+        income2 = Income.objects.create(
+            user=self.user1,
+            category=self.category1,
+            date=today,
+            recurring=Income.RecurringChoices.NO,
+            amount=200,
+            description="CurrentYearAccrued"
+        )
+        income3 = Income.objects.create(
+            user=self.user1,
+            category=self.category1,
+            date=today.replace(year=today.year, month=12, day=31),
+            recurring=Income.RecurringChoices.NO,
+            amount=300,
+            description="CurrentYearUpcoming"
+        )
+        # Soft delete income1
+        income1.delete(acting_user=self.user1)
+        # Previous year: should include soft-deleted
+        resp = client.get(reverse("income-report"), {"year": prev_year})
+        assert str(income1.amount) in resp.content.decode()
+        # Current year: should NOT include soft-deleted
+        resp = client.get(reverse("income-report"), {"year": today.year})
+        assert str(income1.amount) not in resp.content.decode()
+        # Category filter
+        resp = client.get(reverse("income-report"), {"category": self.category1.id})
+        assert str(income2.amount) in resp.content.decode()
+        # Accrued/upcoming split
+        resp = client.get(reverse("income-report"))
+        assert str(income2.amount) in resp.content.decode()
+        assert str(income3.amount) in resp.content.decode()

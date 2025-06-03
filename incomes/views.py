@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model, login, authenticate, logout
+from django.contrib.auth import get_user_model,logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import (
     LoginView, LogoutView, PasswordResetView, PasswordResetDoneView,
@@ -7,12 +7,13 @@ from django.contrib.auth.views import (
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import (
-    ListView, DetailView, CreateView, UpdateView, DeleteView, FormView
+    ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView
 )
 from django.shortcuts import redirect
 from .models import Income, Category, UserProfile
 from .forms import IncomeForm, CategoryForm
 from django import forms
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -176,3 +177,48 @@ CustomPasswordResetView = PasswordResetView
 CustomPasswordResetDoneView = PasswordResetDoneView
 CustomPasswordResetConfirmView = PasswordResetConfirmView
 CustomPasswordResetCompleteView = PasswordResetCompleteView
+
+# --- Report Views ---
+class ReportView(LoginRequiredMixin, TemplateView):
+    template_name = "incomes/report.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        year = self.request.GET.get("year")
+        category_id = self.request.GET.get("category")
+        today = timezone.now().date()
+        current_year = today.year
+        selected_year = int(year) if year and year.isdigit() else current_year
+
+        # QuerySet base: include soft-deleted for previous years
+        if selected_year != current_year:
+            incomes_qs = Income.all_objects.all_with_deleted().filter(user=user)
+        else:
+            incomes_qs = Income.objects.filter(user=user, is_deleted=False)
+
+        # Filter by year
+        incomes_qs = incomes_qs.filter(date__year=selected_year)
+
+        # Filter by category if provided
+        if category_id:
+            incomes_qs = incomes_qs.filter(category_id=category_id)
+
+        # Accrued: date <= today
+        accrued = incomes_qs.filter(date__lte=today)
+        # Upcoming: date > today
+        upcoming = incomes_qs.filter(date__gt=today)
+        # All: both accrued and upcoming
+        all_incomes = incomes_qs
+
+        context["selected_year"] = selected_year
+        context["years"] = list(range(current_year, current_year - 10, -1))
+        context["categories"] = Category.objects.filter(user=user, is_deleted=False)
+        context["selected_category"] = int(category_id) if category_id else None
+        context["accrued_total"] = sum(i.amount for i in accrued)
+        context["upcoming_total"] = sum(i.amount for i in upcoming)
+        context["all_total"] = sum(i.amount for i in all_incomes)
+        context["accrued_incomes"] = accrued
+        context["upcoming_incomes"] = upcoming
+        context["all_incomes"] = all_incomes
+        return context

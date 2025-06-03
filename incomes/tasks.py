@@ -19,8 +19,9 @@ def build_template_variables(income):
     return json.dumps({
         "1": income.user.first_name or income.user.username,
         "2": f"{income.amount:.2f}",
-        "3": income.category.name if income.category else "General",
-        "4": income.description or "No description"
+        "3": income.currency or "USD",
+        "4": income.category.name if income.category else "General",
+        "5": income.description or "No description"
     })
 
 
@@ -66,6 +67,6 @@ def send_whatsapp_reminder():
                 content_sid=settings.TWILIO_WHATSAPP_TEMPLATE_SID,
                 content_variables=template_vars
             )
-            logger.info(f"✅ Reminder sent | Income #{income.id} → {to_number}")
+            logger.info(f"✅ Reminder sent | Income #{income.id} → {to_number} | SID: {message.sid}")
         except TwilioRestException as e:
             logger.error(f"❌ Twilio failed | Income #{income.id} | {e.code}: {e.msg}")

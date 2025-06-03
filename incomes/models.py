@@ -6,9 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from typing import Optional, List
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
-from django.db.models.signals import pre_delete
 from django.utils.html import escape
-from django.dispatch import receiver
 from cryptography.fernet import Fernet
 from django.conf import settings
 import base64
@@ -230,17 +228,27 @@ class Income(SoftDeleteModel, EncryptedModel):
                 cls.ANNUALLY: relativedelta(years=1),
             }
             return intervals.get(value)
+        
+    class CurrencyChoices(models.TextChoices):
+        JOD = "JOD", _("Jordanian Dinar")
+        SAR = "SAR", _("Saudi Riyal")
+        TRY = "TRY", _("Turkish Lira")
+        USD = "USD", _("US Dollar")
 
     _amount_encrypted = models.CharField(max_length=255, db_column='amount')
     _description_encrypted = models.TextField(blank=False, null=False,  default="", db_column='description')
-    # amount = models.CharField(max_length=255)
     date = models.DateField()
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
-    # description = models.TextField(blank=True, null=True)
     recurring = models.CharField(
         max_length=2,
         choices=RecurringChoices.choices,
         default=RecurringChoices.NO,
+    )
+    currency = models.CharField(
+        max_length=3,
+        choices=CurrencyChoices.choices,
+        default=CurrencyChoices.USD,
+        help_text=_("Currency of the income."),
     )
     user = models.ForeignKey(
         get_user_model(),
