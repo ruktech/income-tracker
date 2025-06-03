@@ -12,7 +12,7 @@ class IncomeForm(forms.ModelForm):
 
     class Meta:
         model = Income
-        fields = ['amount', 'date', 'category', 'description', 'recurring', 'user', 'expiration_date']
+        fields = ['amount', 'currency', 'date', 'category', 'description', 'recurring', 'user', 'expiration_date']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
