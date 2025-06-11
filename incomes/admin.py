@@ -2,10 +2,16 @@ from django.contrib import admin
 from .models import Income, Category, UserProfile
 from .forms import IncomeForm, CategoryForm
 
+
+@admin.action(description="Restore selected incomes")
 def restore_incomes(modeladmin, request, queryset):
     for obj in queryset:
         obj.restore()
-restore_incomes.short_description = "Restore selected incomes"
+
+# def restore_incomes(modeladmin, request, queryset):
+#     for obj in queryset:
+#         obj.restore()
+# restore_incomes.short_description = "Restore selected incomes"
 
 class IncomeAdmin(admin.ModelAdmin):
     form = IncomeForm
