@@ -13,6 +13,8 @@ class IncomeAdmin(admin.ModelAdmin):
     list_display = ('amount', 'currency', 'date', 'category', 'description', 'recurring', 'user', 'is_deleted')
     list_filter = ('category', 'recurring', 'user', 'is_deleted')
     actions = [restore_incomes]
+    date_hierarchy = 'date'
+    readonly_fields = ('is_deleted',)
 
     def get_queryset(self, request):
         # Show all records, including soft-deleted
