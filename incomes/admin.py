@@ -1,10 +1,13 @@
 from django.contrib import admin
-from .models import Income, Category, UserProfile
-from .forms import IncomeForm, CategoryForm
+from django.db.models.query import QuerySet
+from django.http import HttpRequest
+
+from .forms import CategoryForm, IncomeForm
+from .models import Category, Income, UserProfile
 
 
 @admin.action(description="Restore selected incomes")
-def restore_incomes(modeladmin, request, queryset):
+def restore_incomes(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset: QuerySet) -> None:
     for obj in queryset:
         obj.restore()
 
@@ -26,7 +29,7 @@ class IncomeAdmin(admin.ModelAdmin):
     date_hierarchy = "date"
     readonly_fields = ("is_deleted",)
 
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
         # Show all records, including soft-deleted
         return Income.all_objects.all_with_deleted()
 

@@ -1,21 +1,18 @@
-from django.contrib.auth import get_user_model,logout
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.views import (
-    LoginView, LogoutView, PasswordResetView, PasswordResetDoneView,
-    PasswordResetConfirmView, PasswordResetCompleteView
-)
-from django.contrib import messages
-from django.urls import reverse_lazy
-from django.views.generic import (
-    ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView
-)
-from django.shortcuts import redirect
-from .models import Income, Category, UserProfile
-from .forms import IncomeForm, CategoryForm
 from django import forms
+from django.contrib import messages
+from django.contrib.auth import get_user_model, logout
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import LoginView, LogoutView, PasswordResetCompleteView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
 from django.utils import timezone
+from django.views.generic import CreateView, DeleteView, DetailView, FormView, ListView, TemplateView, UpdateView
+
+from .forms import CategoryForm, IncomeForm
+from .models import Category, Income, UserProfile
 
 User = get_user_model()
+
 
 # --- User Signup Form ---
 class SignupForm(forms.ModelForm):
@@ -40,6 +37,7 @@ class SignupForm(forms.ModelForm):
             user.save()
         return user
 
+
 # --- Signup View ---
 class SignupView(FormView):
     template_name = "registration/signup.html"
@@ -51,11 +49,13 @@ class SignupView(FormView):
         messages.success(self.request, "Account created. Await admin approval.")
         return super().form_valid(form)
 
+
 # --- User Data Isolation Mixin ---
 class UserIsOwnerMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         obj = self.get_object()
         return obj.user == self.request.user
+
 
 # --- Income Views ---
 class IncomeListView(LoginRequiredMixin, ListView):
@@ -66,9 +66,11 @@ class IncomeListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Income.objects.filter(user=self.request.user, is_deleted=False)
 
+
 class IncomeDetailView(UserIsOwnerMixin, DetailView):
     model = Income
     template_name = "incomes/income_detail.html"
+
 
 class IncomeCreateView(LoginRequiredMixin, CreateView):
     model = Income
@@ -80,11 +82,13 @@ class IncomeCreateView(LoginRequiredMixin, CreateView):
         form.instance.user = self.request.user
         return super().form_valid(form)
 
+
 class IncomeUpdateView(UserIsOwnerMixin, UpdateView):
     model = Income
     form_class = IncomeForm
     template_name = "incomes/income_form.html"
     success_url = reverse_lazy("income-list")
+
 
 class IncomeDeleteView(UserIsOwnerMixin, DeleteView):
     model = Income
@@ -96,6 +100,7 @@ class IncomeDeleteView(UserIsOwnerMixin, DeleteView):
         obj.delete(acting_user=request.user)  # Soft delete with permission check
         return redirect(self.success_url)
 
+
 # --- Category Views ---
 class CategoryListView(LoginRequiredMixin, ListView):
     model = Category
@@ -105,9 +110,11 @@ class CategoryListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Category.objects.filter(user=self.request.user, is_deleted=False)
 
+
 class CategoryDetailView(UserIsOwnerMixin, DetailView):
     model = Category
     template_name = "categories/category_detail.html"
+
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
     model = Category
@@ -119,11 +126,13 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
         form.instance.user = self.request.user
         return super().form_valid(form)
 
+
 class CategoryUpdateView(UserIsOwnerMixin, UpdateView):
     model = Category
     form_class = CategoryForm
     template_name = "categories/category_form.html"
     success_url = reverse_lazy("category-list")
+
 
 class CategoryDeleteView(UserIsOwnerMixin, DeleteView):
     model = Category
@@ -135,6 +144,7 @@ class CategoryDeleteView(UserIsOwnerMixin, DeleteView):
         obj.delete(acting_user=request.user)  # Soft delete with permission check
         return redirect(self.success_url)
 
+
 # --- UserProfile Views ---
 class UserProfileDetailView(LoginRequiredMixin, DetailView):
     model = UserProfile
@@ -142,6 +152,7 @@ class UserProfileDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self):
         return UserProfile.objects.get(user=self.request.user)
+
 
 class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
     model = UserProfile
@@ -151,6 +162,7 @@ class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_object(self):
         return UserProfile.objects.get(user=self.request.user)
+
 
 # --- Authentication Views (Django built-in) ---
 class CustomLoginView(LoginView):
@@ -162,6 +174,7 @@ class CustomLoginView(LoginView):
             return redirect("login")
         return super().form_valid(form)
 
+
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy("logged_out")
     http_method_names = ["get", "post", "head", "options"]
@@ -172,11 +185,13 @@ class CustomLogoutView(LogoutView):
             logout(request)
         return super().dispatch(request, *args, **kwargs)
 
+
 # Password reset views use Django's built-in templates and logic
 CustomPasswordResetView = PasswordResetView
 CustomPasswordResetDoneView = PasswordResetDoneView
 CustomPasswordResetConfirmView = PasswordResetConfirmView
 CustomPasswordResetCompleteView = PasswordResetCompleteView
+
 
 # --- Report Views ---
 class ReportView(LoginRequiredMixin, TemplateView):
