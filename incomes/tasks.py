@@ -18,7 +18,7 @@ def build_template_variables(income):
     """Prepare variables for WhatsApp content template."""
     return json.dumps({
         "1": income.user.first_name or income.user.username,
-        "2": f"{income.amount:.2f}",
+        "2": f"{income.amount:,.2f}",
         "3": income.currency or "USD",
         "4": income.category.name if income.category else "General",
         "5": income.description or "No description"
