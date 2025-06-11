@@ -8,11 +8,6 @@ def restore_incomes(modeladmin, request, queryset):
     for obj in queryset:
         obj.restore()
 
-# def restore_incomes(modeladmin, request, queryset):
-#     for obj in queryset:
-#         obj.restore()
-# restore_incomes.short_description = "Restore selected incomes"
-
 class IncomeAdmin(admin.ModelAdmin):
     form = IncomeForm
     list_display = ('amount', 'currency', 'date', 'category', 'description', 'recurring', 'user', 'is_deleted')
