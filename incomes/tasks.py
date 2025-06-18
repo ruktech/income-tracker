@@ -58,7 +58,7 @@ def send_whatsapp_reminder() -> None:
             logger.warning(f"UserProfile missing for user {income.user.id}")
             continue
 
-        to_number = f"whatsapp:{user_profile.get_decrypted_whatsapp_number()}"
+        to_number = f"whatsapp:{user_profile.whatsapp_number}"
         template_vars = build_template_variables(income)
 
         try:

@@ -8,7 +8,7 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import CreateView, DeleteView, DetailView, FormView, ListView, TemplateView, UpdateView
 
-from .forms import CategoryForm, IncomeForm
+from .forms import CategoryForm, IncomeForm, UserProfileForm
 from .models import Category, Income, UserProfile
 
 User = get_user_model()
@@ -150,17 +150,17 @@ class UserProfileDetailView(LoginRequiredMixin, DetailView):
     model = UserProfile
     template_name = "userprofile/userprofile_detail.html"
 
-    def get_object(self):
+    def get_object(self) -> UserProfile:
         return UserProfile.objects.get(user=self.request.user)
 
 
 class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
     model = UserProfile
-    fields = ["twilio_to_whatsapp_number"]
+    form_class = UserProfileForm
     template_name = "userprofile/userprofile_form.html"
     success_url = reverse_lazy("userprofile-detail")
 
-    def get_object(self):
+    def get_object(self) -> UserProfile:
         return UserProfile.objects.get(user=self.request.user)
 
 

@@ -150,27 +150,42 @@ def default_expiration_date() -> date:
 
 class UserProfile(EncryptedModel):
     user = models.OneToOneField(User, on_delete=models.PROTECT)
-    twilio_to_whatsapp_number = models.CharField(
-        max_length=20,
+    _whatsapp_number_encrypted = models.CharField(
+        max_length=255,
+        null=False,  # temporarily allow null
+        blank=False,
+        db_column="twilio_to_whatsapp_number",
         help_text=_("The WhatsApp number to send reminders to for this user."),
     )
 
-    def save(self, *args, **kwargs) -> None:
-        # Encrypt the WhatsApp number
-        encryption_key = self._get_encryption_key()
-        cipher_suite = Fernet(encryption_key)
-        self.twilio_to_whatsapp_number = cipher_suite.encrypt(self.twilio_to_whatsapp_number.encode()).decode()
-
-        super().save(*args, **kwargs)
-
-    def get_decrypted_whatsapp_number(self) -> str:
-        # Decrypt the WhatsApp number
-        encryption_key = self._get_encryption_key()
-        cipher_suite = Fernet(encryption_key)
-        return cipher_suite.decrypt(self.twilio_to_whatsapp_number.encode()).decode()
+    class Meta:
+        verbose_name = _("User Profile")
+        verbose_name_plural = _("User Profiles")
 
     def __str__(self) -> str:
         return f"{self.user.username}'s Profile"
+
+    def _get_cipher_suite(self) -> Fernet:
+        key = self._get_encryption_key()
+        return Fernet(key)
+
+    @property
+    def whatsapp_number(self) -> str:
+        if not self._whatsapp_number_encrypted:
+            raise ValueError(_("WhatsApp number is required."))
+        try:
+            cipher = self._get_cipher_suite()
+            return cipher.decrypt(self._whatsapp_number_encrypted.encode()).decode()
+        except Exception as e:
+            raise ValueError(_("Failed to decrypt WhatsApp number.")) from e
+
+    @whatsapp_number.setter
+    def whatsapp_number(self, value: str) -> None:
+        if value is None or not isinstance(value, str) or not value.strip():
+            raise ValueError(_("WhatsApp number must be a non-empty string."))
+
+        cipher = self._get_cipher_suite()
+        self._whatsapp_number_encrypted = cipher.encrypt(value.strip().encode()).decode()
 
 
 class Category(SoftDeleteModel, EncryptedModel):

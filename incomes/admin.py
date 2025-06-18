@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 
-from .forms import CategoryForm, IncomeForm
+from .forms import AdminCategoryForm, AdminIncomeForm, AdminUserProfileForm
 from .models import Category, Income, UserProfile
 
 
@@ -12,8 +12,9 @@ def restore_incomes(modeladmin: admin.ModelAdmin, request: HttpRequest, queryset
         obj.restore()
 
 
+@admin.register(Income)
 class IncomeAdmin(admin.ModelAdmin):
-    form = IncomeForm
+    form = AdminIncomeForm
     list_display = (
         "amount",
         "currency",
@@ -34,17 +35,15 @@ class IncomeAdmin(admin.ModelAdmin):
         return Income.all_objects.all_with_deleted()
 
 
+@admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    form = CategoryForm
+    form = AdminCategoryForm
     list_display = ("name", "user")
     list_filter = ("user",)
 
 
+@admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "twilio_to_whatsapp_number")
+    form = AdminUserProfileForm
+    list_display = ("user", "whatsapp_number")
     list_filter = ("user",)
-
-
-admin.site.register(Income, IncomeAdmin)
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(UserProfile, UserProfileAdmin)
