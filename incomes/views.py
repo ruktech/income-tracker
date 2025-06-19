@@ -1,8 +1,17 @@
+import calendar
+from collections import defaultdict
+from datetime import date
+from typing import Any, Dict, List, Tuple
+
 from django import forms
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.views import LoginView, LogoutView, PasswordResetCompleteView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
+from django.core.exceptions import ValidationError
+from django.db import models
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -23,16 +32,25 @@ class SignupForm(forms.ModelForm):
         model = User
         fields = ("username", "email")
 
-    def clean(self):
-        cleaned = super().clean()
-        if cleaned.get("password1") != cleaned.get("password2"):
-            raise forms.ValidationError("Passwords do not match.")
-        return cleaned
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        pw1 = cleaned_data.get("password1")
+        pw2 = cleaned_data.get("password2")
 
-    def save(self, commit=True):
+        if pw1 != pw2:
+            raise forms.ValidationError("Passwords do not match.")
+
+        try:
+            validate_password(pw1, user=None)
+        except ValidationError as e:
+            self.add_error("password1", e)
+
+        return cleaned_data
+
+    def save(self, commit: bool = True) -> AbstractBaseUser:
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password1"])
-        user.is_active = False  # Require admin approval
+        user.is_active = False
         if commit:
             user.save()
         return user
@@ -197,43 +215,80 @@ CustomPasswordResetCompleteView = PasswordResetCompleteView
 class ReportView(LoginRequiredMixin, TemplateView):
     template_name = "incomes/report.html"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        context: Dict[str, Any] = super().get_context_data(**kwargs)
         user = self.request.user
-        year = self.request.GET.get("year")
+        today: date = timezone.localdate()
+
+        selected_year, selected_month = self._get_selected_month_year(today)
         category_id = self.request.GET.get("category")
-        today = timezone.now().date()
-        current_year = today.year
-        selected_year = int(year) if year and year.isdigit() else current_year
 
-        # QuerySet base: include soft-deleted for previous years
-        if selected_year != current_year:
-            incomes_qs = Income.all_objects.all_with_deleted().filter(user=user)
-        else:
-            incomes_qs = Income.objects.filter(user=user, is_deleted=False)
+        incomes_qs = self._get_filtered_incomes(user.id, selected_year, selected_month, category_id)
+        month_end = self._get_month_end(selected_year, selected_month)
 
-        # Filter by year
-        incomes_qs = incomes_qs.filter(date__year=selected_year)
+        accrued, upcoming = self._get_occurrences(incomes_qs, selected_year, selected_month, today, month_end)
+        all_incomes = accrued + upcoming
 
-        # Filter by category if provided
-        if category_id:
-            incomes_qs = incomes_qs.filter(category_id=category_id)
+        context.update(
+            {
+                "selected_year": selected_year,
+                "selected_month": selected_month,
+                "years": list(range(today.year, today.year - 10, -1)),
+                "months": [(i, calendar.month_name[i]) for i in range(1, 13)],
+                "categories": Category.objects.filter(user=user, is_deleted=False),
+                "selected_category": int(category_id) if category_id and category_id.isdigit() else None,
+                "accrued_total": sum(item["income"].amount for item in accrued),
+                "upcoming_total": sum(item["income"].amount for item in upcoming),
+                "all_total": sum(item["income"].amount for item in all_incomes),
+                "accrued_incomes": accrued,
+                "upcoming_incomes": upcoming,
+                "all_incomes": all_incomes,
+                "currency_totals": self._get_currency_totals(all_incomes),
+            }
+        )
 
-        # Accrued: date <= today
-        accrued = incomes_qs.filter(date__lte=today)
-        # Upcoming: date > today
-        upcoming = incomes_qs.filter(date__gt=today)
-        # All: both accrued and upcoming
-        all_incomes = incomes_qs
-
-        context["selected_year"] = selected_year
-        context["years"] = list(range(current_year, current_year - 10, -1))
-        context["categories"] = Category.objects.filter(user=user, is_deleted=False)
-        context["selected_category"] = int(category_id) if category_id else None
-        context["accrued_total"] = sum(i.amount for i in accrued)
-        context["upcoming_total"] = sum(i.amount for i in upcoming)
-        context["all_total"] = sum(i.amount for i in all_incomes)
-        context["accrued_incomes"] = accrued
-        context["upcoming_incomes"] = upcoming
-        context["all_incomes"] = all_incomes
         return context
+
+    def _get_selected_month_year(self, today: date) -> Tuple[int, int]:
+        year = self.request.GET.get("year")
+        month = self.request.GET.get("month")
+        selected_year = int(year) if year and year.isdigit() else today.year
+        selected_month = int(month) if month and month.isdigit() else today.month
+        return selected_year, selected_month
+
+    def _get_month_end(self, year: int, month: int) -> date:
+        last_day = calendar.monthrange(year, month)[1]
+        return date(year, month, last_day)
+
+    def _get_filtered_incomes(self, user_id: int, year: int, month: int, category_id: str | None) -> models.QuerySet:
+        month_start = date(year, month, 1)
+        incomes_qs = Income.objects.filter(user_id=user_id, is_deleted=False)
+
+        if category_id and category_id.isdigit():
+            incomes_qs = incomes_qs.filter(category_id=int(category_id))
+
+        incomes_qs = incomes_qs.filter(models.Q(expiration_date__isnull=True) | models.Q(expiration_date__gte=month_start))
+        return incomes_qs
+
+    def _get_occurrences(self, incomes_qs: models.QuerySet, year: int, month: int, today: date, month_end: date) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        occurrences: List[Tuple[date, Income]] = []
+
+        for income in incomes_qs:
+            last_date = min([d for d in [income.expiration_date, month_end] if d])
+            for occ_date in income.upcoming_occurrences(last_date):
+                if occ_date.year == year and occ_date.month == month and (income.expiration_date is None or occ_date <= income.expiration_date):
+                    occurrences.append((occ_date, income))
+
+        occurrences.sort(key=lambda x: x[0])
+
+        accrued = [dict(date=odate, income=inc) for odate, inc in occurrences if odate <= today]
+        upcoming = [dict(date=odate, income=inc) for odate, inc in occurrences if odate > today]
+
+        return accrued, upcoming
+
+    def _get_currency_totals(self, incomes: List[Dict[str, Any]]) -> List[Tuple[str, float]]:
+        currency_totals: defaultdict[str, float] = defaultdict(float)
+        for item in incomes:
+            currency = getattr(item["income"], "currency", "JOD")
+            currency_totals[currency] += float(item["income"].amount)
+        return sorted(currency_totals.items())

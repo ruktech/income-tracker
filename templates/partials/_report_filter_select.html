@@ -1,0 +1,19 @@
+{# label: display label, name: form field name, options: list, selected: selected value #}
+<div class="col-auto">
+  <label for="{{ name }}" class="form-label">{{ label }}</label>
+  <select name="{{ name }}" id="{{ name }}" class="form-select">
+    {% if all_option %}
+      <option value="">{% autoescape off %}{{ all_option }}{% endautoescape %}</option>
+    {% endif %}
+
+    {% for opt in options %}
+      {% if is_tuple %}
+        <option value="{{ opt.0 }}" {% if opt.0 == selected %}selected{% endif %}>{{ opt.1 }}</option>
+      {% elif is_model %}
+        <option value="{{ opt.id }}" {% if opt.id == selected %}selected{% endif %}>{{ opt.name }}</option>
+      {% else %}
+        <option value="{{ opt }}" {% if opt == selected %}selected{% endif %}>{{ opt }}</option>
+      {% endif %}
+    {% endfor %}
+  </select>
+</div>
