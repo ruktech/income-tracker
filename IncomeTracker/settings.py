@@ -204,14 +204,14 @@ if not DEBUG:
     }
 
     # Override DB settings with PostgreSQL config
-    DATABASES["default"] = {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env["POSTGRES_DB"],
-        "USER": env["POSTGRES_USER"],
-        "PASSWORD": env["POSTGRES_PASSWORD"],
-        "HOST": env.get("POSTGRES_HOST", "localhost"),
-        "PORT": env.get("POSTGRES_PORT", "5432"),
-        "OPTIONS": {"options": "-c search_path=public"},
-    }
+    # DATABASES["default"] = {
+    #     "ENGINE": "django.db.backends.postgresql",
+    #     "NAME": env["POSTGRES_DB"],
+    #     "USER": env["POSTGRES_USER"],
+    #     "PASSWORD": env["POSTGRES_PASSWORD"],
+    #     "HOST": env.get("POSTGRES_HOST", "localhost"),
+    #     "PORT": env.get("POSTGRES_PORT", "5432"),
+    #     "OPTIONS": {"options": "-c search_path=public"},
+    # }
 
     # Other production-specific settings can go here
