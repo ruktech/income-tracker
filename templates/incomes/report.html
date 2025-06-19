@@ -1,6 +1,6 @@
 {# filepath: templates/incomes/report.html #}
 {% extends "base.html" %}
-
+{% load humanize %}
 {% block content %}
 <div class="container mt-4">
   <h2 class="mb-4">Income Report</h2>
@@ -31,7 +31,7 @@
               {% for currency, total in currency_totals %}
                 <tr>
                   <td>{{ currency }}</td>
-                  <td>{{ total|floatformat:2 }}</td>
+                  <td>{{ total|floatformat:2|intcomma }}</td>
                 </tr>
               {% empty %}
                 <tr>
