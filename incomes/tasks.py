@@ -35,7 +35,7 @@ def get_tomorrows_incomes() -> Tuple["QuerySet[Income]", timezone.datetime.date]
     return (
         Income.objects.select_related("user", "category")
         .filter(expiration_date__gte=now().date())
-        .prefetch_related(Prefetch("user__userprofile", queryset=UserProfile.objects.only("twilio_to_whatsapp_number"))),
+        .prefetch_related(Prefetch("user__userprofile", queryset=UserProfile.objects.only("_whatsapp_number_encrypted"))),
         tomorrow,
     )
 
