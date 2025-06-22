@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
+{% block title %}Edit Profile | Income Tracker{% endblock %}
 {% block content %}
-<h2>Edit User Profile</h2>
-<form method="post">{% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Save</button>
-</form>
-<a href="{% url 'userprofile-detail' %}">Cancel</a>
+<section class="profile-section fade-in-down">
+  <h2>Edit User Profile</h2>
+  <form method="post" class="profile-form">{% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-actions">
+      <button type="submit">Save</button>
+      <a href="{% url 'userprofile-detail' %}" class="button secondary">Cancel</a>
+    </div>
+  </form>
+</section>
 {% endblock %}

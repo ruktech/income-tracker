@@ -1,16 +1,21 @@
 {% extends 'base.html' %}
+{% block title %}Incomes | Income Tracker{% endblock %}
 {% block content %}
-<h2>Your Incomes</h2>
-<ul>
-  {% for income in incomes %}
-    <li>
-      <a href="{% url 'income-detail' income.pk %}">
-        {{ income.amount }} - {{ income.category }} - {{ income.date }}
-      </a>
-    </li>
-  {% empty %}
-    <li>No incomes found.</li>
-  {% endfor %}
-</ul>
-<a href="{% url 'income-create' %}">Add Income</a>
+<section class="category-section fade-in-down">
+  <div class="category-header">
+    <h2>Your Incomes</h2>
+    <a href="{% url 'income-create' %}" class="button">Add Income</a>
+  </div>
+  <ul class="category-list">
+    {% for income in incomes %}
+      <li>
+        <a href="{% url 'income-detail' income.pk %}" class="category-link">
+          {{ income.amount }} {{ income.currency }} — {{ income.category }} — {{ income.date }}
+        </a>
+      </li>
+    {% empty %}
+      <li class="empty">No incomes found.</li>
+    {% endfor %}
+  </ul>
+</section>
 {% endblock %}

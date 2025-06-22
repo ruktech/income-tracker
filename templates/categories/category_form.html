@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
+{% block title %}Add/Edit Category | Income Tracker{% endblock %}
 {% block content %}
-<h2>{% if object %}Edit{% else %}Add{% endif %} Category</h2>
-<form method="post">{% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Save</button>
-</form>
-<a href="{% url 'category-list' %}">Cancel</a>
+<section class="profile-section fade-in-down">
+  <h2>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Category</h2>
+  <form method="post" class="profile-form">{% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-actions">
+      <button type="submit">{% if form.instance.pk %}Save Changes{% else %}Add Category{% endif %}</button>
+      <a href="{% url 'category-list' %}" class="button secondary">Cancel</a>
+    </div>
+  </form>
+</section>
 {% endblock %}

@@ -142,7 +142,8 @@ USE_TZ = True
 # -------------------------------------------------------------------
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "static"
+STATICFILES_DIRS = [BASE_DIR / "static"]  # For development, points to ./static/
+STATIC_ROOT = BASE_DIR / "staticfiles"  # For production, points to ./staticfiles/
 
 # Media files (e.g., user uploads)
 MEDIA_URL = "/media/"

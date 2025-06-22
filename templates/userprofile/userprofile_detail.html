@@ -1,8 +1,19 @@
 {% extends 'base.html' %}
+{% block title %}Profile | Income Tracker{% endblock %}
 {% block content %}
-<h2>User Profile</h2>
-
-<p><strong>WhatsApp Number:</strong> {{ object.whatsapp_number }}</p>
-
-<a href="{% url 'userprofile-update' %}">Edit</a>
+<section class="profile-section fade-in-down">
+  <div class="profile-card">
+    <h2>User Profile</h2>
+    <div class="profile-info">
+      <div>
+        <span class="profile-label">WhatsApp Number:</span>
+        <span class="profile-value">{{ object.whatsapp_number }}</span>
+      </div>
+      <!-- Add more fields here if needed -->
+    </div>
+    <div class="profile-actions">
+      <a href="{% url 'userprofile-update' %}" class="button">Edit</a>
+    </div>
+  </div>
+</section>
 {% endblock %}

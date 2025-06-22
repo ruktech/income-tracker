@@ -2,8 +2,9 @@
 .env
 __pycache__/
 *.pyc
+*.py[cod]
 media/
 static/
-db.sqlite3
+*.sqlite3
 *.log
 .github/

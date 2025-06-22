@@ -12,6 +12,7 @@ class UserProfileForm(forms.ModelForm):
         required=True,
         label="WhatsApp Number",
         help_text="Enter your WhatsApp number in E.164 format (e.g. +962799306010).",
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "+962799306010", "autocomplete": "tel"}),
     )
 
     class Meta:
@@ -74,6 +75,14 @@ class IncomeForm(forms.ModelForm):
     class Meta:
         model = Income
         fields = ["amount", "currency", "date", "category", "description", "recurring", "expiration_date"]
+        widgets = {
+            "amount": forms.NumberInput(attrs={"class": "form-control", "placeholder": "Amount"}),
+            "currency": forms.Select(attrs={"class": "form-control"}),
+            "category": forms.Select(attrs={"class": "form-control"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Optional notes"}),
+            "recurring": forms.Select(attrs={"class": "form-control"}),
+            "expiration_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+        }
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -119,6 +128,8 @@ class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
         fields = ["name"]
+        widgets = {"name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Category name"})}
+        labels = {"name": "Category Name"}
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

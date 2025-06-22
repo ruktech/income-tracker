@@ -1,8 +1,20 @@
 {% extends 'base.html' %}
+{% block title %}Category | Income Tracker{% endblock %}
 {% block content %}
-<h2>Category Detail</h2>
-<p>Name: {{ object.name }}</p>
-<a href="{% url 'category-update' object.pk %}">Edit</a> |
-<a href="{% url 'category-delete' object.pk %}">Delete</a> |
-<a href="{% url 'category-list' %}">Back to list</a>
+<section class="category-section fade-in-down">
+  <div class="profile-card">
+    <h2>Category Detail</h2>
+    <div class="profile-info">
+      <div>
+        <span class="profile-label">Name:</span>
+        <span class="profile-value">{{ object.name }}</span>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <a href="{% url 'category-update' object.pk %}" class="button">Edit</a>
+      <a href="{% url 'category-delete' object.pk %}" class="button secondary">Delete</a>
+      <a href="{% url 'category-list' %}" class="button secondary">Back to list</a>
+    </div>
+  </div>
+</section>
 {% endblock %}

@@ -1,14 +1,19 @@
 {% extends 'base.html' %}
+{% block title %}Categories | Income Tracker{% endblock %}
 {% block content %}
-<h2>Your Categories</h2>
-<ul>
-  {% for category in categories %}
-    <li>
-      <a href="{% url 'category-detail' category.pk %}">{{ category.name }}</a>
-    </li>
-  {% empty %}
-    <li>No categories found.</li>
-  {% endfor %}
-</ul>
-<a href="{% url 'category-create' %}">Add Category</a>
+<section class="category-section fade-in-down">
+  <div class="category-header">
+    <h2>Your Categories</h2>
+    <a href="{% url 'category-create' %}" class="button">Add Category</a>
+  </div>
+  <ul class="category-list">
+    {% for category in categories %}
+      <li>
+        <a href="{% url 'category-detail' category.pk %}" class="category-link">{{ category.name }}</a>
+      </li>
+    {% empty %}
+      <li class="empty">No categories found.</li>
+    {% endfor %}
+  </ul>
+</section>
 {% endblock %}

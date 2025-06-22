@@ -1,18 +1,23 @@
 {% extends 'base.html' %}
+{% block title %}Dashboard | Income Tracker{% endblock %}
+
 {% block content %}
-<h2>Welcome to Income Tracker</h2>
-{% if user.is_authenticated %}
-  <div style="display: flex; flex-direction: column; gap: 1em; max-width: 300px;">
-    <a href="{% url 'income-list' %}"><button>My Incomes</button></a>
-    <a href="{% url 'category-list' %}"><button>My Categories</button></a>
-    <a href="{% url 'userprofile-detail' %}"><button>My Profile</button></a>
-    <a href="{% url 'income-report' %}"><button>My Report</button></a>
-    <a href="{% url 'logout' %}"><button>Logout</button></a>
+<section class="dashboard-section fade-in-down">
+  <h2>
+    Welcome to <span class="primary">Income Tracker</span>
+  </h2>
+  <p class="subtitle">
+    Track, categorize, and report your incomes.<br>
+    Get instant insights and control over your finances.
+  </p>
+
+  <div class="dashboard-info">
+    <h3>How does it work?</h3>
+    <ul>
+      <li>Add income entries and categorize them easily.</li>
+      <li>See monthly summaries and interactive reports.</li>
+      <li>Securely access your data from anywhere.</li>
+    </ul>
   </div>
-{% else %}
-  <div style="display: flex; flex-direction: column; gap: 1em; max-width: 300px;">
-    <a href="{% url 'login' %}"><button>Login</button></a>
-    <a href="{% url 'signup' %}"><button>Sign Up</button></a>
-  </div>
-{% endif %}
+</section>
 {% endblock %}

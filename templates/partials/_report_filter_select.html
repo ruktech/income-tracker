@@ -1,11 +1,9 @@
-{# label: display label, name: form field name, options: list, selected: selected value #}
-<div class="col-auto">
-  <label for="{{ name }}" class="form-label">{{ label }}</label>
-  <select name="{{ name }}" id="{{ name }}" class="form-select">
+<div class="filter-group">
+  <label for="{{ name }}" class="filter-label">{{ label }}</label>
+  <select name="{{ name }}" id="{{ name }}" class="form-control">
     {% if all_option %}
       <option value="">{% autoescape off %}{{ all_option }}{% endautoescape %}</option>
     {% endif %}
-
     {% for opt in options %}
       {% if is_tuple %}
         <option value="{{ opt.0 }}" {% if opt.0 == selected %}selected{% endif %}>{{ opt.1 }}</option>
