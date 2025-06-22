@@ -12,7 +12,20 @@
 </head>
 <body>
 <header>
+    <!-- Left hamburger for controls -->
+    <input type="checkbox" id="controls-toggle" class="menu-toggle-checkbox" />
+    <label for="controls-toggle" class="menu-toggle menu-toggle-left" aria-label="Toggle controls">
+        <span class="bar" aria-hidden="true"></span><span class="bar" aria-hidden="true"></span><span class="bar" aria-hidden="true"></span>
+    </label>
+
     <span class="logo">💸 IncomeTracker</span>
+
+    <!-- Right hamburger for nav -->
+    <input type="checkbox" id="nav-toggle" class="menu-toggle-checkbox" />
+    <label for="nav-toggle" class="menu-toggle menu-toggle-right" aria-label="Toggle navigation">
+        <span class="bar" aria-hidden="true"></span><span class="bar" aria-hidden="true"></span><span class="bar" aria-hidden="true"></span>
+    </label>
+
     <nav>
         <a href="{% url 'main' %}" {% if request.resolver_match.url_name == 'main' %}class="active"{% endif %}>Dashboard</a>
         {% if user.is_authenticated %}

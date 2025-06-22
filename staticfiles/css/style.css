@@ -106,7 +106,7 @@ nav a.active::after, nav a:hover::after, nav a:focus::after {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1.4em;
+    /* font-size: 1.4em; */
     margin-right: 1em;
     color: var(--primary);
     transition: color var(--transition), transform var(--transition);
@@ -172,9 +172,9 @@ form {
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
-    margin-bottom: 1.5rem;
+    /* margin-bottom: 1.5rem; */
     background: var(--gray);
-    padding: 1.5rem;
+    /* padding: 1.5rem; */
     border-radius: var(--radius);
     box-shadow: 0 1px 4px #0001;
     transition: background var(--transition);
@@ -603,3 +603,111 @@ a.button.secondary:focus {
 .inline { display: inline !important; }
 
 /* End of file */
+
+
+.menu-toggle-checkbox { display: none; }
+.menu-toggle {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  justify-content: center;
+  align-items: center;
+  z-index: 20;
+  background: none;
+  border: none;
+}
+.menu-toggle span {
+  display: block;
+  width: 26px;
+  height: 3px;
+  margin: 4px 0;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: 0.3s;
+}
+.menu-toggle-left { order: 0; }
+.menu-toggle-right { order: 2; margin-left: auto; }
+
+@media (max-width: 700px) {
+  header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.7rem;
+    height: 60px;
+    position: fixed;
+    width: 100vw;
+    left: 0;
+    top: 0;
+    background: var(--white);
+    z-index: 100;
+  }
+  .logo {
+    flex: 1 1 auto;
+    text-align: center;
+    order: 2;
+    margin: 0;
+  }
+  .menu-toggle.menu-toggle-left {
+    order: 1;
+    margin-right: 0.5rem;
+  }
+  .menu-toggle.menu-toggle-right {
+    order: 3;
+    margin-left: 0.5rem;
+  }
+  .menu-toggle { display: flex; }
+  
+  nav,
+  .header-controls {
+    display: none;
+    position: absolute;
+    left: 0;
+    width: 100vw;
+    background: var(--white);
+    box-shadow: var(--shadow);
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 1rem 0.5rem 0.8rem 0.5rem;
+    z-index: 15;
+    animation: fadeInDown 0.3s;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  /* Left menu: controls under header */
+  .menu-toggle-checkbox#controls-toggle:checked ~ .header-controls {
+    display: flex !important;
+    top: 60px;
+  }
+  /* Right menu: nav under header */
+  .menu-toggle-checkbox#nav-toggle:checked ~ nav {
+    display: flex !important;
+    top: 60px;
+  }
+}
+
+@media (min-width: 701px) {
+  .menu-toggle { display: none !important; }
+  .header-controls,
+  nav {
+    display: flex !important;
+    position: static !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    gap: 1.5rem;
+  }
+}
+
+/* Hamburger animation to X */
+.menu-toggle-checkbox:checked + .menu-toggle span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.menu-toggle-checkbox:checked + .menu-toggle span:nth-child(2) {
+  opacity: 0;
+}
+.menu-toggle-checkbox:checked + .menu-toggle span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}

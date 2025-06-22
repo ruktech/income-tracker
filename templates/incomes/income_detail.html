@@ -1,12 +1,21 @@
 {% extends 'base.html' %}
+{% block title %}Income | Income Tracker{% endblock %}
 {% block content %}
-<h2>Income Detail</h2>
-<p>Amount: {{ object.amount }}</p>
-<p>Category: {{ object.category }}</p>
-<p>Date: {{ object.date }}</p>
-<p>Description: {{ object.description }}</p>
-<p>Recurring: {{ object.get_recurring_display }}</p>
-<a href="{% url 'income-update' object.pk %}">Edit</a> |
-<a href="{% url 'income-delete' object.pk %}">Delete</a> |
-<a href="{% url 'income-list' %}">Back to list</a>
+<section class="profile-section fade-in-down">
+  <div class="profile-card">
+    <h2>Income Detail</h2>
+    <div class="profile-info">
+      <div><span class="profile-label">Amount:</span> <span class="profile-value">{{ object.amount }} {{ object.currency }}</span></div>
+      <div><span class="profile-label">Category:</span> <span class="profile-value">{{ object.category }}</span></div>
+      <div><span class="profile-label">Date:</span> <span class="profile-value">{{ object.date }}</span></div>
+      <div><span class="profile-label">Description:</span> <span class="profile-value">{{ object.description|default:"—" }}</span></div>
+      <div><span class="profile-label">Recurring:</span> <span class="profile-value">{{ object.get_recurring_display }}</span></div>
+    </div>
+    <div class="profile-actions">
+      <a href="{% url 'income-update' object.pk %}" class="button">Edit</a>
+      <a href="{% url 'income-delete' object.pk %}" class="button secondary">Delete</a>
+      <a href="{% url 'income-list' %}" class="button secondary">Back to list</a>
+    </div>
+  </div>
+</section>
 {% endblock %}
