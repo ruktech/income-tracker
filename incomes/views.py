@@ -96,6 +96,11 @@ class IncomeCreateView(LoginRequiredMixin, CreateView):
     template_name = "incomes/income_form.html"
     success_url = reverse_lazy("income-list")
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super().form_valid(form)
@@ -107,13 +112,18 @@ class IncomeUpdateView(UserIsOwnerMixin, UpdateView):
     template_name = "incomes/income_form.html"
     success_url = reverse_lazy("income-list")
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
 
 class IncomeDeleteView(UserIsOwnerMixin, DeleteView):
     model = Income
     template_name = "incomes/income_confirm_delete.html"
     success_url = reverse_lazy("income-list")
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         obj = self.get_object()
         obj.delete(acting_user=request.user)  # Soft delete with permission check
         return redirect(self.success_url)
@@ -157,10 +167,17 @@ class CategoryDeleteView(UserIsOwnerMixin, DeleteView):
     template_name = "categories/category_confirm_delete.html"
     success_url = reverse_lazy("category-list")
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         obj = self.get_object()
-        obj.delete(acting_user=request.user)  # Soft delete with permission check
-        return redirect(self.success_url)
+        try:
+            obj.delete(acting_user=request.user)  # Soft delete with permission check
+            return redirect(self.success_url)
+        except ValidationError as e:
+            messages.error(
+                request,
+                e.message if hasattr(e, "message") else str(e),
+            )
+            return redirect(self.success_url)
 
 
 # --- UserProfile Views ---

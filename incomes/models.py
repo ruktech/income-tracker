@@ -75,7 +75,27 @@ class SoftDeleteModel(OwnerProtectedDeleteMixin, models.Model):
     class Meta:
         abstract = True
 
+    protected_related_fields = []
+
+    def _has_protected_related(self):
+        # Check each relation listed in protected_related_fields
+        for related in getattr(self, "protected_related_fields", []):
+            qs = getattr(self, related).all()
+            # Only count alive (not soft-deleted) related records
+            if hasattr(qs, "alive"):
+                qs = qs.alive()
+            else:
+                qs = qs.filter(is_deleted=False)
+            if qs.exists():
+                return related  # Return first found for message
+        return None
+
     def delete(self, using: Optional[str] = None, keep_parents: bool = False, acting_user: AbstractBaseUser | None = None) -> None:
+        # Check related protection
+        blocking = self._has_protected_related()
+        if blocking:
+            raise ValidationError("This category cannot be deleted because it is assigned to existing incomes. Please move or delete those incomes first.")
+        # Check permissions and ownership
         if acting_user is None:
             raise PermissionDenied("User authentication required.")
         if not acting_user.has_perm("incomes.delete_income"):
@@ -197,6 +217,7 @@ class Category(SoftDeleteModel, EncryptedModel):
         blank=False,
         help_text=_("The user who owns this category."),
     )
+    protected_related_fields = ["income_set"]
 
     class Meta:
         verbose_name = _("Category")

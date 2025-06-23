@@ -85,7 +85,18 @@ class IncomeForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs) -> None:
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+
+        # Set category queryset based on user
+        if user is not None:
+            from .models import Category  # Local import if circular import issues
+
+            self.fields["category"].queryset = Category.objects.filter(user=user, is_deleted=False)
+        else:
+            self.fields["category"].queryset = Category.objects.none()
+
+        # Set initial values if editing an existing instance
         if self.instance and self.instance.pk:
             self.fields["amount"].initial = self.instance.amount
             self.fields["description"].initial = self.instance.description
