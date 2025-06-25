@@ -16,6 +16,7 @@
 - **Safe Environment**: Uses [uv](https://github.com/astral-sh/uv) for Python env and [ruff](https://github.com/astral-sh/ruff) for linting/formatting.
 - **Cron-Friendly**: Management command to send reminders, easy to schedule.
 - **Postgres-ready**: Out-of-the-box production database config.
+- **Pure CSS and JS**: No 3rth party links for css and javascript all pure and builtin.
 
 ---
 
