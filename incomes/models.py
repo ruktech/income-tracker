@@ -77,7 +77,7 @@ class SoftDeleteModel(OwnerProtectedDeleteMixin, models.Model):
 
     protected_related_fields = []
 
-    def _has_protected_related(self):
+    def _has_protected_related(self) -> Optional[str]:
         # Check each relation listed in protected_related_fields
         for related in getattr(self, "protected_related_fields", []):
             qs = getattr(self, related).all()

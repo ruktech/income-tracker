@@ -32,7 +32,7 @@ class IncomeAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         # Show all records, including soft-deleted
-        return Income.all_objects.all_with_deleted()
+        return Income.all_objects.all_with_deleted().select_related("category", "user")
 
 
 @admin.register(Category)

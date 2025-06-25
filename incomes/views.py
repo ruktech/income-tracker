@@ -6,12 +6,15 @@ from typing import Any, Dict, List, Tuple
 from django import forms
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
+from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.views import LoginView, LogoutView, PasswordResetCompleteView, PasswordResetConfirmView, PasswordResetDoneView, PasswordResetView
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.forms import ModelForm
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -62,7 +65,9 @@ class SignupView(FormView):
     form_class = SignupForm
     success_url = reverse_lazy("login")
 
-    def form_valid(self, form):
+    from django.http import HttpResponse
+
+    def form_valid(self, form: SignupForm) -> HttpResponse:
         form.save()
         messages.success(self.request, "Account created. Await admin approval.")
         return super().form_valid(form)
@@ -70,7 +75,7 @@ class SignupView(FormView):
 
 # --- User Data Isolation Mixin ---
 class UserIsOwnerMixin(LoginRequiredMixin, UserPassesTestMixin):
-    def test_func(self):
+    def test_func(self) -> bool:
         obj = self.get_object()
         return obj.user == self.request.user
 
@@ -81,8 +86,8 @@ class IncomeListView(LoginRequiredMixin, ListView):
     template_name = "incomes/income_list.html"
     context_object_name = "incomes"
 
-    def get_queryset(self):
-        return Income.objects.filter(user=self.request.user, is_deleted=False)
+    def get_queryset(self) -> models.QuerySet:
+        return Income.objects.select_related("category").filter(user=self.request.user, is_deleted=False)
 
 
 class IncomeDetailView(UserIsOwnerMixin, DetailView):
@@ -96,12 +101,12 @@ class IncomeCreateView(LoginRequiredMixin, CreateView):
     template_name = "incomes/income_form.html"
     success_url = reverse_lazy("income-list")
 
-    def get_form_kwargs(self):
+    def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
         return kwargs
 
-    def form_valid(self, form):
+    def form_valid(self, form: ModelForm) -> HttpResponse:
         form.instance.user = self.request.user
         return super().form_valid(form)
 
@@ -112,7 +117,7 @@ class IncomeUpdateView(UserIsOwnerMixin, UpdateView):
     template_name = "incomes/income_form.html"
     success_url = reverse_lazy("income-list")
 
-    def get_form_kwargs(self):
+    def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
         return kwargs
@@ -123,7 +128,7 @@ class IncomeDeleteView(UserIsOwnerMixin, DeleteView):
     template_name = "incomes/income_confirm_delete.html"
     success_url = reverse_lazy("income-list")
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # noqa: ANN002, ANN003
         obj = self.get_object()
         obj.delete(acting_user=request.user)  # Soft delete with permission check
         return redirect(self.success_url)
@@ -135,7 +140,7 @@ class CategoryListView(LoginRequiredMixin, ListView):
     template_name = "categories/category_list.html"
     context_object_name = "categories"
 
-    def get_queryset(self):
+    def get_queryset(self) -> models.QuerySet:
         return Category.objects.filter(user=self.request.user, is_deleted=False)
 
 
@@ -150,7 +155,7 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
     template_name = "categories/category_form.html"
     success_url = reverse_lazy("category-list")
 
-    def form_valid(self, form):
+    def form_valid(self, form: ModelForm) -> HttpResponse:
         form.instance.user = self.request.user
         return super().form_valid(form)
 
@@ -167,7 +172,7 @@ class CategoryDeleteView(UserIsOwnerMixin, DeleteView):
     template_name = "categories/category_confirm_delete.html"
     success_url = reverse_lazy("category-list")
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # noqa: ANN002, ANN003
         obj = self.get_object()
         try:
             obj.delete(acting_user=request.user)  # Soft delete with permission check
@@ -203,7 +208,7 @@ class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
 class CustomLoginView(LoginView):
     template_name = "registration/login.html"
 
-    def form_valid(self, form):
+    def form_valid(self, form: AuthenticationForm) -> HttpResponse:
         if not form.get_user().is_active:
             messages.error(self.request, "Account inactive. Await admin approval.")
             return redirect("login")
@@ -214,7 +219,7 @@ class CustomLogoutView(LogoutView):
     next_page = reverse_lazy("logged_out")
     http_method_names = ["get", "post", "head", "options"]
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # noqa: ANN002, ANN003
         # Always log out the user, regardless of method
         if request.user.is_authenticated:
             logout(request)
@@ -232,7 +237,7 @@ CustomPasswordResetCompleteView = PasswordResetCompleteView
 class ReportView(LoginRequiredMixin, TemplateView):
     template_name = "incomes/report.html"
 
-    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+    def get_context_data(self, **kwargs) -> Dict[str, Any]:  # noqa: ANN003
         context: Dict[str, Any] = super().get_context_data(**kwargs)
         user = self.request.user
         today: date = timezone.localdate()
@@ -285,6 +290,9 @@ class ReportView(LoginRequiredMixin, TemplateView):
             incomes_qs = incomes_qs.filter(category_id=int(category_id))
 
         incomes_qs = incomes_qs.filter(models.Q(expiration_date__isnull=True) | models.Q(expiration_date__gte=month_start))
+
+        # Optimization:
+        incomes_qs = incomes_qs.select_related("category")
         return incomes_qs
 
     def _get_occurrences(self, incomes_qs: models.QuerySet, year: int, month: int, today: date, month_end: date) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:

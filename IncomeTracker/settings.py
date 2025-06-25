@@ -43,6 +43,12 @@ DEBUG = env.get("DEBUG", "False") == "True"
 # Allowed hosts
 ALLOWED_HOSTS = env.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
+if DEBUG:
+    INTERNAL_IPS = [
+        "127.0.0.1",
+        "localhost",
+    ]
+
 # -------------------------------------------------------------------
 # TWILIO SETTINGS
 # -------------------------------------------------------------------
@@ -64,6 +70,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third-party apps
     "django.contrib.humanize",
+    "debug_toolbar",
     # Local apps
     "incomes",
 ]
@@ -76,6 +83,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Third-party
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = "IncomeTracker.urls"
@@ -158,6 +167,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # -------------------------------------------------------------------
 # LOGIN AND LOGOUT REDIRECT SETTINGS
 # -------------------------------------------------------------------
+LOGIN_URL = "/incomes/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/incomes/logged_out/"
 

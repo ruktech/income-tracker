@@ -19,7 +19,7 @@ class UserProfileForm(forms.ModelForm):
         model = UserProfile
         fields = ["whatsapp_number"]  # Do not expose _whatsapp_number_encrypted
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: tuple, **kwargs: dict) -> None:
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields["whatsapp_number"].initial = self.instance.whatsapp_number
@@ -49,7 +49,7 @@ class AdminUserProfileForm(forms.ModelForm):
         model = UserProfile
         fields = ["user", "whatsapp_number"]  # Do not expose _whatsapp_number_encrypted
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: tuple, **kwargs: dict) -> None:
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields["whatsapp_number"].initial = self.instance.whatsapp_number
@@ -78,13 +78,14 @@ class IncomeForm(forms.ModelForm):
         widgets = {
             "amount": forms.NumberInput(attrs={"class": "form-control", "placeholder": "Amount"}),
             "currency": forms.Select(attrs={"class": "form-control"}),
+            "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "category": forms.Select(attrs={"class": "form-control"}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Optional notes"}),
             "recurring": forms.Select(attrs={"class": "form-control"}),
             "expiration_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
         }
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: tuple, **kwargs: dict) -> None:
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
@@ -118,7 +119,7 @@ class AdminIncomeForm(forms.ModelForm):
         model = Income
         fields = ["amount", "currency", "date", "category", "description", "recurring", "user", "expiration_date"]
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: tuple, **kwargs: dict) -> None:
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields["amount"].initial = self.instance.amount
@@ -142,7 +143,7 @@ class CategoryForm(forms.ModelForm):
         widgets = {"name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Category name"})}
         labels = {"name": "Category Name"}
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields["name"].initial = self.instance.name
@@ -162,7 +163,7 @@ class AdminCategoryForm(forms.ModelForm):
         model = Category
         fields = ["name", "user"]
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002, ANN003
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields["name"].initial = self.instance.name
