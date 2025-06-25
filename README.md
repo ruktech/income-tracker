@@ -24,7 +24,7 @@
 ### 1. Clone & Initialize
 
 ```bash
-git clone https://github.com/YOURUSERNAME/income-tracker.git
+git clone https://github.com/ruktech/income-tracker.git
 cd income-tracker
 uv init income-tracker .
 ```
