@@ -70,7 +70,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third-party apps
     "django.contrib.humanize",
-    "debug_toolbar",
     # Local apps
     "incomes",
 ]
@@ -83,9 +82,17 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # Third-party
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
+
+if DEBUG:
+    INSTALLED_APPS += [
+        "debug_toolbar",
+    ]
+
+    MIDDLEWARE = [
+        "debug_toolbar.middleware.DebugToolbarMiddleware",
+        *MIDDLEWARE,
+    ]
 
 ROOT_URLCONF = "IncomeTracker.urls"
 
