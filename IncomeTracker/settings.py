@@ -37,8 +37,8 @@ env = read_env_file(env_file_path)
 # -------------------------------------------------------------------
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env.get("SECRET_KEY")
-if not SECRET_KEY.strip():
-    raise ImproperlyConfigured("SECRET_KEY in .env must not be blank.")
+if not SECRET_KEY or not SECRET_KEY.strip():
+    raise ImproperlyConfigured("Set a nonblank SECRET_KEY in .env.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get("DEBUG", "False") == "True"
