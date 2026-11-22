@@ -1,4 +1,5 @@
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,7 +36,9 @@ env = read_env_file(env_file_path)
 # SECURITY SETTINGS
 # -------------------------------------------------------------------
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.get("SECRET_KEY", "unsafe-default-secret-key")
+SECRET_KEY = env.get("SECRET_KEY")
+if not SECRET_KEY.strip():
+    raise ImproperlyConfigured("SECRET_KEY in .env must not be blank.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get("DEBUG", "False") == "True"
