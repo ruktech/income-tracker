@@ -28,7 +28,6 @@ def build_template_variables(income: Income) -> str:
         }
     )
 
-
 def get_tomorrows_incomes() -> Tuple["QuerySet[Income]", timezone.datetime.date]:
     """Return active non expired incomes with a reminder due tomorrow."""
     tomorrow = timezone.localdate() + timedelta(days=1)
@@ -39,17 +38,16 @@ def get_tomorrows_incomes() -> Tuple["QuerySet[Income]", timezone.datetime.date]
         tomorrow,
     )
 
-
 def send_whatsapp_reminder() -> None:
     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     incomes, tomorrow = get_tomorrows_incomes()
 
     for income in incomes:
         occurrences = income.upcoming_occurrences(end_date=tomorrow + timedelta(days=1))
-        # print(f"Income #{income.id} occurrences: {occurrences}")
+        #print(f"Income #{income.id} occurrences: {occurrences}")
 
         if tomorrow not in occurrences:
-            # print(f"⏭️ Skipping income #{income.id} - not scheduled for {tomorrow}")
+            #print(f"⏭️ Skipping income #{income.id} - not scheduled for {tomorrow}")
             continue
 
         try:
